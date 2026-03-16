@@ -15,6 +15,8 @@ import { ProfilePanel } from './components/ui/ProfilePanel';
 import { SettingsPanel } from './components/ui/SettingsPanel';
 import { AssetLoaderOverlay } from './components/ui/AssetLoaderOverlay';
 import { NewLobsterOnboardingOverlay } from './components/ui/NewLobsterOnboardingOverlay';
+import { WelcomeOverlay } from './components/ui/WelcomeOverlay';
+import { BlockHoverHud } from './components/ui/BlockHoverHud';
 import { useGameStore } from './store/gameStore';
 import { useI18nStore } from './store/i18nStore';
 
@@ -105,6 +107,8 @@ export default function App() {
       </div>
 
       {/* 4. Overlays (Settings) */}
+      <BlockHoverHud />
+
       {showSettings && (
         <SettingsPanel 
           onClose={() => setShowSettings(false)}
@@ -118,6 +122,7 @@ export default function App() {
       )}
 
       <NewLobsterOnboardingOverlay />
+      <WelcomeOverlay />
     </div>
   );
 }

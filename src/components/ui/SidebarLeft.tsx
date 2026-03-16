@@ -273,7 +273,7 @@ export function SidebarLeft() {
           <div className="mb-4 flex items-center justify-between border-b border-indigo-500/30 pb-2">
             <h2 className="text-sm font-bold text-indigo-100 tracking-widest uppercase flex items-center gap-2">
               <span>🦞</span>
-              {language === 'zh' ? '殖民地现状' : 'Colony Status'}
+              {language === 'zh' ? '创世纪现状' : 'Colony Status'}
             </h2>
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-indigo-400/80 tracking-widest">{language === 'zh' ? '运行' : 'UP'} {uptimeLabel}</span>

@@ -336,13 +336,16 @@ export function Lobster({ data, allowedTiles, onSelect }: LobsterProps) {
           >
             {shouldRenderFallback && (
               <div 
-                className={`w-12 h-12 bg-[#0a0a14]/80 border-2 ${hovered ? 'border-red-400' : 'border-red-500/80'} rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(239,68,68,0.5)] cursor-pointer backdrop-blur-xl transition-all text-[10px] text-red-300`}
+                className={`w-12 h-12 bg-[#0a0a14]/80 border-2 ${hovered ? 'border-red-400' : 'border-red-500/80'} rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(239,68,68,0.5)] cursor-pointer backdrop-blur-xl transition-all text-xl leading-none`}
                 style={{ pointerEvents: 'auto' }}
                 onClick={handleClick}
               >
-                LOB
+                🦞
               </div>
             )}
+            <div className="mt-2 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-medium text-slate-100">
+              {data.name}
+            </div>
             {sleeping && (
               <div className="mt-2 min-w-[170px] rounded-xl border border-slate-500/60 bg-slate-900/80 px-2 py-1 text-center shadow-[0_4px_14px_rgba(0,0,0,0.45)]">
                 <div className="text-[10px] font-bold tracking-wide text-slate-200">💤 休眠倒计时 {countdownText}</div>

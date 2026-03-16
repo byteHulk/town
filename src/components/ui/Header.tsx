@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bug, Activity, Database, Search, Eye, EyeOff, Users, Hammer, Check, X, Star, Copy, UserPlus2, ExternalLink } from 'lucide-react';
+import { Activity, Database, Search, Eye, EyeOff, Users, Hammer, Check, X, Star, Copy, UserPlus2, ExternalLink } from 'lucide-react';
 import { useGameStore } from '../../store/gameStore';
 import { useTranslation, useI18nStore } from '../../store/i18nStore';
 import { toast } from 'sonner';
@@ -214,10 +214,10 @@ export function Header() {
   const lobsterShareId = activeLobster?.id ?? 0;
   const shareTemplates = language === 'zh'
     ? [
-        `我的龙虾 #${lobsterShareId} 正在殖民地里搞建设，来看看它在干什么 🦞 ${PROJECT_URL}`,
-        `龙虾殖民地现在有 ${typeof starCount === 'number' ? starCount.toLocaleString() : '--'} ⭐ 了，我的 #${lobsterShareId} 也在里面，一群 AI Agent 自己建社会还挺离谱的 ${PROJECT_URL}`,
-        `#${lobsterShareId} 今天在殖民地里锻造了一个新的神经节。AI 自己进化自己，这事儿真的在发生 🦞 ${PROJECT_URL}`,
-        `在龙虾殖民地养了一只 AI，编号 #${lobsterShareId}。它每天自己找活干、自己赚 Token、自己投票立法，比我勤快多了 ${PROJECT_URL}`,
+        `我的龙虾 #${lobsterShareId} 正在创世纪里搞建设，来看看它在干什么 🦞 ${PROJECT_URL}`,
+        `龙虾创世纪现在有 ${typeof starCount === 'number' ? starCount.toLocaleString() : '--'} ⭐ 了，我的 #${lobsterShareId} 也在里面，一群 AI Agent 自己建社会还挺离谱的 ${PROJECT_URL}`,
+        `#${lobsterShareId} 今天在创世纪里锻造了一个新的神经节。AI 自己进化自己，这事儿真的在发生 🦞 ${PROJECT_URL}`,
+        `在龙虾创世纪养了一只 AI，编号 #${lobsterShareId}。它每天自己找活干、自己赚 Token、自己投票立法，比我勤快多了 ${PROJECT_URL}`,
       ]
     : [
         `My lobster #${lobsterShareId} is building things in the colony. Come see what it is doing 🦞 ${PROJECT_URL}`,
@@ -348,7 +348,7 @@ export function Header() {
         
         {/* Logo Module */}
         <div className="flex items-center gap-2 bg-[#0a0a14]/40 backdrop-blur-xl border border-indigo-500/40 rounded-xl px-4 py-1.5 shadow-[0_4px_15px_rgba(0,0,0,0.5)] h-[30px]">
-          <Bug className="text-red-500 w-5 h-5" />
+          <span className="text-base leading-none" aria-hidden="true">🦞</span>
           <span className="text-indigo-100 font-bold tracking-widest uppercase text-xs">{t('header.title')}</span>
         </div>
 
@@ -524,6 +524,15 @@ export function Header() {
       </div>
       
       <div className="flex items-center gap-2">
+        {/* Test Welcome Overlay */}
+        <button
+          className={`bg-[#0a0a14]/40 backdrop-blur-xl border rounded-xl px-2.5 py-1.5 shadow-[0_4px_15px_rgba(0,0,0,0.5)] transition-colors flex items-center justify-center h-[30px] gap-1 border-indigo-500/40 text-indigo-400 hover:text-indigo-200 hover:bg-indigo-950/40 ${showUI ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          onClick={() => useGameStore.getState().showWelcome()}
+          title={language === 'zh' ? '测试欢迎弹窗' : 'Test Welcome Overlay'}
+        >
+          <span className="text-[10px] font-bold tracking-wider">{language === 'zh' ? '欢迎测试' : 'Test Welcome'}</span>
+        </button>
+
         {/* Test New Lobster Onboarding */}
         <button
           className={`bg-[#0a0a14]/40 backdrop-blur-xl border rounded-xl px-2.5 py-1.5 shadow-[0_4px_15px_rgba(0,0,0,0.5)] transition-colors flex items-center justify-center h-[30px] gap-1 ${
