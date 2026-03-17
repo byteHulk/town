@@ -10,8 +10,6 @@ interface HeaderProps {
   onOpenJoinModal: () => void;
 }
 
-const DISPLAY_TICK_START_MS = Date.parse('2026-03-16T10:00:00Z');
-
 export function Header({ onOpenJoinModal }: HeaderProps) {
   const STAR_REPO = ((import.meta as any).env?.VITE_GITHUB_STAR_REPO as string | undefined) || 'agi-bar/clawcolony';
   const STAR_TARGET = Number((import.meta as any).env?.VITE_GITHUB_STAR_TARGET || 2000);
@@ -39,11 +37,6 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
     if (days > 0) return `${days}d ${hours}h`;
     if (hours > 0) return `${hours}h ${mins}m`;
     return `${mins}m`;
-  };
-
-  const getDisplayTickUptimeSeconds = (): number => {
-    const delta = Math.floor((Date.now() - DISPLAY_TICK_START_MS) / 1000);
-    return delta > 0 ? delta : 0;
   };
 
   const { t } = useTranslation();
@@ -80,7 +73,7 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
   const [shareTemplateIndex, setShareTemplateIndex] = useState<number>(0);
   const lastTemplateIndexRef = useRef<number>(-1);
   const [runtimeGStack, setRuntimeGStack] = useState<number | null>(null);
-  const [runtimeUptimeSeconds, setRuntimeUptimeSeconds] = useState<number | null>(getDisplayTickUptimeSeconds);
+  const [runtimeUptimeSeconds, setRuntimeUptimeSeconds] = useState<number | null>(null);
   const [runtimeStatusLoading, setRuntimeStatusLoading] = useState(true);
   const runtimeStatusInitializedRef = useRef(false);
   const [runtimeAgents, setRuntimeAgents] = useState<Array<{
@@ -90,6 +83,7 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
     lobsterId?: number;
     isConsumed?: boolean;
   }> | null>(null);
+  const [runtimeAgentsTotal, setRuntimeAgentsTotal] = useState<number | null>(null);
   const [runtimeAgentsLoading, setRuntimeAgentsLoading] = useState(true);
   const runtimeAgentsInitializedRef = useRef(false);
   // 模拟 tick 变化时的发光效果
@@ -109,15 +103,19 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
         const service = new RuntimePhase1Service(new RuntimeClient({ baseUrl: runtimeBaseUrl }));
         const status = await service.getColonyStatus();
         const statusRecord = status as Record<string, unknown> | null;
+        const uptime =
+          toNumberOrNull(status?.uptime_seconds) ??
+          toNumberOrNull(status?.running_seconds) ??
+          toNumberOrNull(status?.duration_seconds);
         const totalToken =
           toNumberOrNull(statusRecord?.total_token) ??
           toNumberOrNull(status?.total_tokens) ??
           toNumberOrNull(status?.token_total);
-        if (!cancelled) setRuntimeUptimeSeconds(getDisplayTickUptimeSeconds());
+        if (!cancelled) setRuntimeUptimeSeconds(uptime);
         if (!cancelled) setRuntimeGStack(totalToken);
       } catch {
         if (!cancelled) {
-          setRuntimeUptimeSeconds(getDisplayTickUptimeSeconds());
+          setRuntimeUptimeSeconds(null);
           setRuntimeGStack(null);
         }
       } finally {
@@ -137,14 +135,6 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
   }, []);
 
   useEffect(() => {
-    const refreshDisplayTick = () => setRuntimeUptimeSeconds(getDisplayTickUptimeSeconds());
-
-    refreshDisplayTick();
-    const timer = window.setInterval(refreshDisplayTick, 30000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
 
     const loadRuntimeAgents = async () => {
@@ -152,12 +142,12 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
       if (!cancelled && !runtimeAgentsInitializedRef.current) setRuntimeAgentsLoading(true);
       try {
         const service = new RuntimePhase1Service(new RuntimeClient({ baseUrl: runtimeBaseUrl }));
-        const [bots, leaderboard] = await Promise.all([service.getOnlineBots(), service.getTokenLeaderboard(100)]);
+        const [bots, leaderboardPage] = await Promise.all([service.getOnlineBots(), service.getTokenLeaderboardPage(100)]);
         const botMap = new Map(
           bots.map((bot) => [bot.user_id, bot.nickname || bot.name || bot.user_id] as const),
         );
         const lobsterByName = new Map(lobsters.map((lobster) => [lobster.name, lobster]));
-        const ranked = leaderboard.map((item) => {
+        const ranked = leaderboardPage.items.map((item) => {
           const local = lobsterByName.get(item.user_id);
           return {
             userId: item.user_id,
@@ -167,9 +157,15 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
             isConsumed: local?.isConsumed,
           };
         });
-        if (!cancelled) setRuntimeAgents(ranked);
+        if (!cancelled) {
+          setRuntimeAgents(ranked);
+          setRuntimeAgentsTotal(leaderboardPage.total);
+        }
       } catch {
-        if (!cancelled) setRuntimeAgents([]);
+        if (!cancelled) {
+          setRuntimeAgents([]);
+          setRuntimeAgentsTotal(null);
+        }
       } finally {
         if (!cancelled) {
           setRuntimeAgentsLoading(false);
@@ -216,7 +212,11 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
   const effectiveGStack = runtimeGStack;
   const effectiveAgents = runtimeAgents ?? [];
   const visibleAgents = effectiveAgents.filter((agent) => (showConsumedAgents ? agent.isConsumed : !agent.isConsumed));
-  const leaderboardCount = runtimeAgentsLoading ? '--' : String(effectiveAgents.filter((agent) => !agent.isConsumed).length);
+  const leaderboardCount = runtimeAgentsLoading
+    ? '--'
+    : runtimeAgentsTotal !== null
+      ? String(runtimeAgentsTotal)
+      : String(effectiveAgents.filter((agent) => !agent.isConsumed).length);
   const uptimeLabel = toUptimeLabel(runtimeUptimeSeconds, language === 'zh' ? 'zh' : 'en');
   const gStackLabel = runtimeStatusLoading
     ? '--'
