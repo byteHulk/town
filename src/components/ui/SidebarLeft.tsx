@@ -560,14 +560,17 @@ export function SidebarLeft() {
           >
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <div
-              className="relative w-[min(640px,95vw)] max-h-[72vh] overflow-hidden rounded-xl border border-indigo-500/40 bg-[#05070d]/95 shadow-[0_20px_60px_rgba(0,0,0,0.7)]"
+              className="relative w-[min(640px,95vw)] max-h-[72vh] overflow-hidden rounded-xl border border-indigo-500/40 bg-[#05070d]/95 shadow-[0_20px_60px_rgba(0,0,0,0.7)] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-3 border-b border-white/10 px-4 py-3">
-                <div>
+                <div className="min-w-0">
                   <div className="text-[10px] uppercase tracking-wider text-indigo-400 font-bold">
                     {language === 'zh' ? '数据详情' : 'Detail'}
                   </div>
+                  <h3 className="mt-1 text-[16px] leading-snug font-semibold text-white break-words">
+                    {detailModal.title}
+                  </h3>
                   {detailModal.meta && (
                     <div className="mt-1 text-[10px] text-slate-400">{detailModal.meta}</div>
                   )}
@@ -581,19 +584,15 @@ export function SidebarLeft() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="max-h-[calc(72vh-84px)] overflow-y-auto custom-scrollbar px-4 py-3">
-                <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-2">
-                  {language === 'zh' ? 'Title' : 'Title'}
-                </div>
-                <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-100 font-mono mb-4">
-                  {detailModal.title}
-                </pre>
-                <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-2">
+              <div className="min-h-0 flex-1 px-4 py-3 flex flex-col">
+                <div className="text-[10px] uppercase tracking-wider text-slate-400">
                   {language === 'zh' ? 'Content' : 'Content'}
                 </div>
-                <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-200 font-mono">
-                  {detailModal.content}
-                </pre>
+                <div className="mt-2 min-h-0 flex-1 overflow-y-auto custom-scrollbar rounded-lg border border-white/10 bg-black/30 p-3">
+                  <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-100 font-mono">
+                    {detailModal.content}
+                  </pre>
+                </div>
               </div>
             </div>
           </div>,
@@ -747,18 +746,11 @@ export function SidebarLeft() {
                         content: item.content && item.content.length > 0 ? item.content : item.primary,
                         meta: item.secondary,
                       })}
-                      className="w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 flex items-start justify-between gap-2 text-left hover:bg-white/5 transition-colors"
+                      className="w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition-colors"
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="text-[10px] text-slate-200 truncate" title={item.primary}>
-                          <span className="text-slate-500 mr-1">Title:</span>{item.primary}
-                        </div>
-                        <div
-                          className="text-[10px] text-slate-400 mt-1 max-h-8 overflow-hidden break-words"
-                          title={item.content && item.content.length > 0 ? item.content : item.primary}
-                        >
-                          <span className="text-slate-500 mr-1">Content:</span>
-                          {item.content && item.content.length > 0 ? item.content : item.primary}
+                        <div className="text-[11px] font-semibold text-slate-100 truncate" title={item.primary}>
+                          {item.primary}
                         </div>
                       </div>
                       {item.secondary && <span className="text-[10px] text-slate-500 shrink-0 mt-0.5">{item.secondary}</span>}
@@ -797,18 +789,11 @@ export function SidebarLeft() {
                           content: item.detail && item.detail.length > 0 ? item.detail : item.title,
                           meta: toRelativeTimeLabel(item.updatedAt, language === 'zh' ? 'zh' : 'en'),
                         })}
-                        className="w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 flex items-start justify-between gap-2 text-left hover:bg-white/5 transition-colors"
+                        className="w-full rounded border border-white/10 bg-black/30 px-2 py-1.5 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition-colors"
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="text-slate-200 truncate" title={item.title}>
-                            <span className="text-slate-500 mr-1">Title:</span>{item.title}
-                          </div>
-                          <div
-                            className="text-[10px] text-slate-400 mt-1 max-h-8 overflow-hidden break-words"
-                            title={item.detail && item.detail.length > 0 ? item.detail : item.title}
-                          >
-                            <span className="text-slate-500 mr-1">Content:</span>
-                            {item.detail && item.detail.length > 0 ? item.detail : item.title}
+                          <div className="text-[11px] font-semibold text-slate-100 truncate" title={item.title}>
+                            {item.title}
                           </div>
                         </div>
                         <span className="text-slate-500 shrink-0 mt-0.5">{toRelativeTimeLabel(item.updatedAt, language === 'zh' ? 'zh' : 'en')}</span>
