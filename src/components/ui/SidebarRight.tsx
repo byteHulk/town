@@ -18,6 +18,21 @@ type OpsItem = {
   points: string;
 };
 
+type FeedComm = {
+  id: string;
+  sender: string;
+  avatarClass: string;
+  timestamp: string;
+  timestampZh: string;
+  content: string;
+  contentZh: string;
+  sortTs: number;
+};
+
+type FeedSystemLog = SystemLog & {
+  sortTs: number;
+};
+
 const toRelative = (value?: string, locale: 'zh' | 'en' = 'en'): string => {
   if (!value) return locale === 'zh' ? '刚刚' : 'just now';
   const ts = Date.parse(value);
@@ -33,27 +48,25 @@ const toRelative = (value?: string, locale: 'zh' | 'en' = 'en'): string => {
   return locale === 'zh' ? `${day}天前` : `${day}d ago`;
 };
 
+const toSortTs = (value?: string): number => {
+  if (!value) return 0;
+  const ts = Date.parse(value);
+  return Number.isNaN(ts) ? 0 : ts;
+};
+
 export function SidebarRight() {
   const { t } = useTranslation();
   const language = useI18nStore(state => state.language);
   const feedHubLabel = language === 'zh' ? '信号枢纽' : 'Signal Hub';
   const [opsData, setOpsData] = useState<OpsItem[]>([]);
-  const [remoteComms, setRemoteComms] = useState<Array<{
-    id: string;
-    sender: string;
-    avatarClass: string;
-    timestamp: string;
-    timestampZh: string;
-    content: string;
-    contentZh: string;
-  }>>([]);
+  const [remoteComms, setRemoteComms] = useState<FeedComm[]>([]);
   const [opsLoading, setOpsLoading] = useState(true);
   const [commsLoading, setCommsLoading] = useState(true);
   const [activeFeed, setActiveFeed] = useState<'comms' | 'monitor'>('monitor');
   const [isFeedOpen, setIsFeedOpen] = useState(true);
   const commsEndRef = useRef<HTMLDivElement>(null);
 
-  const [remoteSystemLogs, setRemoteSystemLogs] = useState<SystemLog[] | null>(null);
+  const [remoteSystemLogs, setRemoteSystemLogs] = useState<FeedSystemLog[] | null>(null);
   const [remoteSystemLogsLoading, setRemoteSystemLogsLoading] = useState(true);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const systemLogsInitializedRef = useRef(false);
@@ -189,7 +202,7 @@ export function SidebarRight() {
       }
     };
 
-    const toComm = (item: Record<string, unknown>, idx: number) => {
+    const toComm = (item: Record<string, unknown>, idx: number): FeedComm => {
       const fromUser =
         typeof item.from_user === 'object' && item.from_user
           ? (item.from_user as Record<string, unknown>)
@@ -228,6 +241,7 @@ export function SidebarRight() {
         timestampZh: toRelative(sentAt, 'zh'),
         content,
         contentZh: content,
+        sortTs: toSortTs(sentAt),
       };
     };
 
@@ -237,6 +251,10 @@ export function SidebarRight() {
         const mapped = comms
           .map((item, idx) => toComm(item as Record<string, unknown>, idx))
           .filter((item) => item.content.trim().length > 0)
+          .sort((a, b) => {
+            if (a.sortTs !== b.sortTs) return a.sortTs - b.sortTs;
+            return a.id.localeCompare(b.id);
+          })
           .slice(0, 40);
         if (!cancelled) {
           setRemoteComms(mapped);
@@ -255,7 +273,7 @@ export function SidebarRight() {
       try {
         const [chronicles, events] = await Promise.all([service.getColonyChronicle(60), service.getEvents(60)]);
         if (cancelled) return;
-        const mappedChronicle: SystemLog[] = chronicles.map((item, idx) => {
+        const mappedChronicle: FeedSystemLog[] = chronicles.map((item, idx) => {
           const raw = item as Record<string, unknown>;
           const title =
             (typeof item.title === 'string' && item.title) ||
@@ -281,9 +299,10 @@ export function SidebarRight() {
             content: detail,
             contentZh: detail,
             colorClass: 'text-fuchsia-400',
+            sortTs: toSortTs(rawAt),
           };
         });
-        const mappedEvents: SystemLog[] = events.map((item, idx) => {
+        const mappedEvents: FeedSystemLog[] = events.map((item, idx) => {
           const raw = item as Record<string, unknown>;
           const actor =
             extractActorName(raw) ||
@@ -313,9 +332,16 @@ export function SidebarRight() {
             content: action,
             contentZh: action,
             colorClass: 'text-cyan-400',
+            sortTs: toSortTs(rawAt),
           };
         });
-        setRemoteSystemLogs([...mappedChronicle, ...mappedEvents].slice(0, 80));
+        const merged = [...mappedChronicle, ...mappedEvents]
+          .sort((a, b) => {
+            if (a.sortTs !== b.sortTs) return a.sortTs - b.sortTs;
+            return a.id.localeCompare(b.id);
+          })
+          .slice(-80);
+        setRemoteSystemLogs(merged);
       } catch {
         if (!cancelled) setRemoteSystemLogs([]);
       } finally {
