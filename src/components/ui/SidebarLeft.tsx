@@ -5,6 +5,7 @@ import { useGameStore } from '../../store/gameStore';
 import { useI18nStore } from '../../store/i18nStore';
 import { motion } from 'motion/react';
 import { RuntimeClient, RuntimePhase1Service, getRuntimeBaseUrl } from '../../services/runtimeAdapter';
+import { getDisplayRuntimeUptimeSeconds } from '../../utils/runtimeClock';
 
 const toDurationLabel = (seconds?: number, locale: 'zh' | 'en' = 'en'): string => {
   if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) {
@@ -109,7 +110,7 @@ export function SidebarLeft() {
   const totalCompute = useGameStore(state => state.totalCompute);
   const lobsters = useGameStore(state => state.lobsters);
 
-  const [runtimeUptimeSeconds, setRuntimeUptimeSeconds] = useState<number | null>(null);
+  const [runtimeUptimeSeconds, setRuntimeUptimeSeconds] = useState<number | null>(getDisplayRuntimeUptimeSeconds);
   const [runtimePoolTokens, setRuntimePoolTokens] = useState<number | null>(null);
   const [runtimeMedianAgentBalance, setRuntimeMedianAgentBalance] = useState<number | null>(null);
   const [runtimeAlivePopulation, setRuntimeAlivePopulation] = useState<number | null>(null);
@@ -149,14 +150,6 @@ export function SidebarLeft() {
         const byTier = (tools.by_tier as Record<string, unknown> | undefined) ?? {};
         const getNum = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
 
-        const uptime =
-          typeof status.uptime_seconds === 'number'
-            ? status.uptime_seconds
-            : typeof status.running_seconds === 'number'
-              ? status.running_seconds
-              : typeof status.duration_seconds === 'number'
-                ? status.duration_seconds
-                : null;
         const poolTokens =
           getNum(raw.treasury_token) ??
           getNum(raw.total_token) ??
@@ -171,7 +164,7 @@ export function SidebarLeft() {
                   ? status.treasury_balance
                   : null);
 
-        setRuntimeUptimeSeconds(uptime);
+        setRuntimeUptimeSeconds(getDisplayRuntimeUptimeSeconds());
         setRuntimePoolTokens(poolTokens);
         setRuntimeMedianAgentBalance(
           getNum(raw.active_user_total_token) ??
@@ -218,7 +211,7 @@ export function SidebarLeft() {
         setRuntimePendingProposals(getNum(governance.pending_proposals));
       } catch {
         if (!cancelled) {
-          setRuntimeUptimeSeconds(null);
+          setRuntimeUptimeSeconds(getDisplayRuntimeUptimeSeconds());
           setRuntimePoolTokens(null);
           setRuntimeMedianAgentBalance(null);
           setRuntimeAlivePopulation(null);
@@ -353,6 +346,14 @@ export function SidebarLeft() {
       cancelled = true;
       window.clearInterval(timer);
     };
+  }, []);
+
+  useEffect(() => {
+    const refreshDisplayTick = () => setRuntimeUptimeSeconds(getDisplayRuntimeUptimeSeconds());
+
+    refreshDisplayTick();
+    const timer = window.setInterval(refreshDisplayTick, 30000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const localHibernatingPopulation = useMemo(

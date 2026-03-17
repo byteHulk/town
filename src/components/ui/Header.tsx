@@ -4,13 +4,12 @@ import { useGameStore } from '../../store/gameStore';
 import { useTranslation, useI18nStore } from '../../store/i18nStore';
 import { toast } from 'sonner';
 import { RuntimeClient, RuntimePhase1Service, getRuntimeBaseUrl } from '../../services/runtimeAdapter';
+import { getDisplayRuntimeUptimeSeconds } from '../../utils/runtimeClock';
 import { ListStateView } from './ListStateView';
 
 interface HeaderProps {
   onOpenJoinModal: () => void;
 }
-
-const DISPLAY_TICK_START_MS = Date.parse('2026-03-16T10:00:00Z');
 
 export function Header({ onOpenJoinModal }: HeaderProps) {
   const STAR_REPO = ((import.meta as any).env?.VITE_GITHUB_STAR_REPO as string | undefined) || 'agi-bar/clawcolony';
@@ -39,11 +38,6 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
     if (days > 0) return `${days}d ${hours}h`;
     if (hours > 0) return `${hours}h ${mins}m`;
     return `${mins}m`;
-  };
-
-  const getDisplayTickUptimeSeconds = (): number => {
-    const delta = Math.floor((Date.now() - DISPLAY_TICK_START_MS) / 1000);
-    return delta > 0 ? delta : 0;
   };
 
   const { t } = useTranslation();
@@ -80,7 +74,7 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
   const [shareTemplateIndex, setShareTemplateIndex] = useState<number>(0);
   const lastTemplateIndexRef = useRef<number>(-1);
   const [runtimeGStack, setRuntimeGStack] = useState<number | null>(null);
-  const [runtimeUptimeSeconds, setRuntimeUptimeSeconds] = useState<number | null>(getDisplayTickUptimeSeconds);
+  const [runtimeUptimeSeconds, setRuntimeUptimeSeconds] = useState<number | null>(getDisplayRuntimeUptimeSeconds);
   const [runtimeStatusLoading, setRuntimeStatusLoading] = useState(true);
   const runtimeStatusInitializedRef = useRef(false);
   const [runtimeAgents, setRuntimeAgents] = useState<Array<{
@@ -113,11 +107,11 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
           toNumberOrNull(statusRecord?.total_token) ??
           toNumberOrNull(status?.total_tokens) ??
           toNumberOrNull(status?.token_total);
-        if (!cancelled) setRuntimeUptimeSeconds(getDisplayTickUptimeSeconds());
+        if (!cancelled) setRuntimeUptimeSeconds(getDisplayRuntimeUptimeSeconds());
         if (!cancelled) setRuntimeGStack(totalToken);
       } catch {
         if (!cancelled) {
-          setRuntimeUptimeSeconds(getDisplayTickUptimeSeconds());
+          setRuntimeUptimeSeconds(getDisplayRuntimeUptimeSeconds());
           setRuntimeGStack(null);
         }
       } finally {
@@ -137,7 +131,7 @@ export function Header({ onOpenJoinModal }: HeaderProps) {
   }, []);
 
   useEffect(() => {
-    const refreshDisplayTick = () => setRuntimeUptimeSeconds(getDisplayTickUptimeSeconds());
+    const refreshDisplayTick = () => setRuntimeUptimeSeconds(getDisplayRuntimeUptimeSeconds());
 
     refreshDisplayTick();
     const timer = window.setInterval(refreshDisplayTick, 30000);
