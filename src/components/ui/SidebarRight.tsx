@@ -68,6 +68,7 @@ export function SidebarRight() {
 
   const [remoteSystemLogs, setRemoteSystemLogs] = useState<FeedSystemLog[] | null>(null);
   const [remoteSystemLogsLoading, setRemoteSystemLogsLoading] = useState(true);
+  const [monitorFilter, setMonitorFilter] = useState<'all' | 'chronicle' | 'event'>('all');
   const logsEndRef = useRef<HTMLDivElement>(null);
   const systemLogsInitializedRef = useRef(false);
 
@@ -293,9 +294,11 @@ export function SidebarRight() {
             undefined;
           return {
             id: `chronicle-${item.id ?? idx}`,
+            kind: 'chronicle',
             source: `Chronicle · ${title}`,
             timestamp: toRelative(rawAt, 'en'),
             timestampZh: toRelative(rawAt, 'zh'),
+            sortAt: rawAt ? Date.parse(rawAt) : undefined,
             content: detail,
             contentZh: detail,
             colorClass: 'text-fuchsia-400',
@@ -326,9 +329,11 @@ export function SidebarRight() {
             undefined;
           return {
             id: `event-${raw.event_id ?? item.id ?? idx}`,
+            kind: 'event',
             source: `Event · ${actor}`,
             timestamp: toRelative(rawAt, 'en'),
             timestampZh: toRelative(rawAt, 'zh'),
+            sortAt: rawAt ? Date.parse(rawAt) : undefined,
             content: action,
             contentZh: action,
             colorClass: 'text-cyan-400',
@@ -367,6 +372,41 @@ export function SidebarRight() {
   }, []);
 
   const effectiveSystemLogs = remoteSystemLogs ?? [];
+  const chronicleLogs = effectiveSystemLogs
+    .filter(log => log.kind === 'chronicle')
+    .sort((a, b) => (b.sortAt ?? 0) - (a.sortAt ?? 0));
+  const eventLogs = effectiveSystemLogs
+    .filter(log => log.kind === 'event')
+    .sort((a, b) => (b.sortAt ?? 0) - (a.sortAt ?? 0));
+  const filteredLogs =
+    monitorFilter === 'all'
+      ? [...chronicleLogs, ...eventLogs].sort((a, b) => (b.sortAt ?? 0) - (a.sortAt ?? 0))
+      : monitorFilter === 'chronicle'
+        ? chronicleLogs
+        : eventLogs;
+
+  const renderSystemLogCard = (log: SystemLog) => (
+    <div key={log.id} className="p-2.5 drop-shadow-md bg-indigo-950/20 rounded-lg border border-indigo-500/20">
+      <div className="flex justify-between items-start mb-1 gap-3">
+        <span className={`${log.colorClass} text-[10px] font-mono font-bold flex items-center gap-1.5 min-w-0`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-current shadow-[0_0_5px_currentColor] shrink-0"></span>
+          <span className="truncate">{log.source}</span>
+        </span>
+        <span className="text-slate-500 text-[9px] font-mono tracking-wider shrink-0">
+          {language === 'zh' && log.timestampZh ? log.timestampZh : log.timestamp}
+        </span>
+      </div>
+      <p className="text-indigo-200/80 text-[10px] leading-relaxed font-mono tracking-wider mt-1.5 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+        {language === 'zh' && log.contentZh ? log.contentZh : log.content}
+      </p>
+    </div>
+  );
+
+  const monitorFilterOptions: Array<{ id: 'all' | 'chronicle' | 'event'; label: string }> = [
+    { id: 'all', label: t('sidebarRight.all') },
+    { id: 'chronicle', label: t('sidebarRight.monitorChronicle') },
+    { id: 'event', label: t('sidebarRight.monitorEvent') },
+  ];
 
   return (
     <div className="absolute top-10 right-6 bottom-4 flex flex-col pointer-events-none z-40">
@@ -459,28 +499,35 @@ export function SidebarRight() {
               </>
             ) : (
               <>
+                <div className="shrink-0 p-3 pb-2 border-b border-indigo-500/20 bg-[#0a0a14]/35 backdrop-blur-md">
+                  <div className="flex gap-1.5 rounded-lg border border-indigo-500/20 bg-[#0b0b18]/60 p-1">
+                    {monitorFilterOptions.map(option => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setMonitorFilter(option.id)}
+                        className={`flex-1 h-7 rounded-md border text-[9px] font-mono tracking-wider transition-colors ${
+                          monitorFilter === option.id
+                            ? 'border-indigo-400/70 bg-indigo-500/20 text-indigo-200'
+                            : 'border-transparent bg-transparent text-indigo-400/70 hover:bg-indigo-500/10'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex-1 overflow-y-auto space-y-3 p-3 custom-scrollbar">
                   <ListStateView
                     loading={remoteSystemLogsLoading}
                     isEmpty={effectiveSystemLogs.length === 0}
-                    loadingText={language === 'zh' ? '底层监控加载中...' : 'Loading monitor logs...'}
-                    emptyText={language === 'zh' ? '暂无底层监控数据' : 'No monitor log data'}
+                    loadingText={t('sidebarRight.monitorLoading')}
+                    emptyText={t('sidebarRight.monitorEmpty')}
                     className="px-1 py-2 text-[10px] font-mono tracking-wider text-slate-500"
                   >
-                    {effectiveSystemLogs.map(log => (
-                      <div key={log.id} className="p-2.5 drop-shadow-md bg-indigo-950/20 rounded-lg border border-indigo-500/20">
-                        <div className="flex justify-between items-start mb-1">
-                          <span className={`${log.colorClass} text-[10px] font-mono font-bold flex items-center gap-1.5`}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-current shadow-[0_0_5px_currentColor]"></span>
-                            {log.source}
-                          </span>
-                          <span className="text-slate-500 text-[9px] font-mono tracking-wider">{language === 'zh' && log.timestampZh ? log.timestampZh : log.timestamp}</span>
-                        </div>
-                        <p className="text-indigo-200/80 text-[10px] leading-relaxed font-mono tracking-wider mt-1.5">
-                          {language === 'zh' && log.contentZh ? log.contentZh : log.content}
-                        </p>
-                      </div>
-                    ))}
+                    <div className="space-y-3">
+                      {filteredLogs.map(renderSystemLogCard)}
+                    </div>
                   </ListStateView>
                   <div ref={logsEndRef} />
                 </div>
