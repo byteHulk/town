@@ -282,6 +282,15 @@ export class RuntimePhase1Service {
   }
 
   async getTokenLeaderboard(limit = 5): Promise<Array<{ user_id: string; balance: number }>> {
+    const data = await this.getTokenLeaderboardPage(limit);
+    if (data.items.length === 0) return [];
+    return data.items;
+  }
+
+  async getTokenLeaderboardPage(limit = 5): Promise<{
+    items: Array<{ user_id: string; balance: number }>;
+    total: number | null;
+  }> {
     const data = await this.client.get<RuntimeTokenLeaderboardResponse>('/api/v1/token/leaderboard', { limit });
     const records = this.pickList<RuntimeTokenLeaderboardItem>(data, ['items', 'rows', 'leaderboard', 'list', 'data']);
     const normalized = records
@@ -303,8 +312,22 @@ export class RuntimePhase1Service {
         return { user_id: userId, balance };
       })
       .filter((item) => item.user_id.length > 0);
-    if (normalized.length === 0) return [];
-    return normalized.sort((a, b) => b.balance - a.balance).slice(0, limit);
+    const total =
+      (typeof data.total === 'number' && Number.isFinite(data.total) ? data.total : null) ??
+      (typeof data.data === 'object' &&
+      data.data !== null &&
+      !Array.isArray(data.data) &&
+      typeof data.data.total === 'number' &&
+      Number.isFinite(data.data.total)
+        ? data.data.total
+        : null);
+    if (normalized.length === 0) {
+      return { items: [], total };
+    }
+    return {
+      items: normalized.sort((a, b) => b.balance - a.balance).slice(0, limit),
+      total,
+    };
   }
 
   async getChatHistory(_userId: string, _limit = 80): Promise<RuntimeChatMessage[]> {
