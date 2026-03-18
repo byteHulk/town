@@ -44,7 +44,7 @@ export const en = {
     intercepting: "INTERCEPTING GUILD EMAILS...",
     all: "ALL",
     monitorChronicle: "Chronicle",
-    monitorEvent: "Event",
+    monitorRepo: "Repo",
     monitorLoading: "Loading monitor logs...",
     monitorEmpty: "No monitor log data",
     builds: "BUILDS",

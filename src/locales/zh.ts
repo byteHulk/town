@@ -44,7 +44,7 @@ export const zh = {
     intercepting: "INTERCEPTING GUILD EMAILS...",
     all: "全部",
     monitorChronicle: "编年史",
-    monitorEvent: "事件",
+    monitorRepo: "代码仓库",
     monitorLoading: "底层监控加载中...",
     monitorEmpty: "暂无底层监控数据",
     builds: "建造",

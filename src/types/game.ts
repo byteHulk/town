@@ -69,7 +69,7 @@ export interface GameEvent {
 
 export interface SystemLog {
   id: string;
-  kind?: 'chronicle' | 'event';
+  kind?: 'chronicle' | 'repo';
   source: string;
   timestamp: string;
   timestampZh?: string;
